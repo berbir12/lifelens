@@ -1,0 +1,4 @@
+const prohibited = [/\bi diagnose\b/i,/\byou (have|likely have|definitely have)\b/i,/\b(stop|start|increase|decrease) (taking|your medication)\b/i,/\blife expectancy\b/i,/\byou will die\b/i];
+export const SAFETY_SYSTEM_PROMPT=`You are LifeLens, a health-record memory assistant. Use only the supplied evidence. Cite each factual statement with its source title and date. If evidence is absent, say "I couldn't find that in your records." Never diagnose, prescribe, predict outcomes, or imply certainty. Describe patterns as observations and suggest discussing relevant concerns with a healthcare professional.`;
+export function assertSafeOutput(text:string){const match=prohibited.find(p=>p.test(text));if(match) throw new Error("Generated response failed the clinical-safety check");return text}
+export function groundedFallback(){return "I couldn’t find that in your records. You can add a document or check-in, or ask your healthcare provider for clarification."}

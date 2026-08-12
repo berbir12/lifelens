@@ -1,0 +1,2 @@
+import {describe,expect,it} from "vitest";import {detectTrend} from "../lib/trends";
+describe("detectTrend",()=>{it("describes meaningful change without diagnosis",()=>{const values=[2,2,3,4,5,6];const result=detectTrend(values.map((value,i)=>({date:new Date(2026,0,i+1),metric:"fatigue",value,sourceId:`c${i}`})),"fatigue");expect(result?.direction).toBe("increased");expect(result?.message).toContain("observation, not a diagnosis")});it("ignores sparse evidence",()=>{expect(detectTrend([],"sleep")).toBeNull()})});

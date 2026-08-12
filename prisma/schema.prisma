@@ -1,0 +1,283 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  FAMILY
+  ADMIN
+}
+
+enum DocumentStatus {
+  QUEUED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum NotificationKind {
+  MEDICATION
+  SUMMARY
+  DOCUMENT
+  FAMILY
+  APPOINTMENT
+  TREND
+}
+
+enum BillingPlan {
+  PERSONAL
+  PLUS
+  FAMILY
+}
+
+enum BillingStatus {
+  PENDING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String?              @unique
+  emailVerified       DateTime?
+  name                String?
+  image               String?
+  role                Role                 @default(USER)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  profile             Profile?
+  documents           MedicalDocument[]
+  timeline            TimelineEvent[]
+  checkIns            VoiceCheckIn[]
+  medications         Medication[]
+  appointments        Appointment[]
+  notifications       Notification[]
+  summaries           Summary[]
+  auditLogs           AuditLog[]           @relation("ActorLogs")
+  familyOwned         FamilyMember[]       @relation("OwnerFamily")
+  familyAccount       FamilyMember[]       @relation("MemberUser")
+  billingSubscription BillingSubscription?
+  checkoutAttempts    CheckoutAttempt[]
+}
+
+model BillingSubscription {
+  id                      String        @id @default(cuid())
+  userId                  String        @unique
+  user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider                String        @default("2checkout")
+  plan                    BillingPlan   @default(PERSONAL)
+  status                  BillingStatus @default(PENDING)
+  providerOrderRef        String?       @unique
+  providerSubscriptionRef String?       @unique
+  currentPeriodEnd        DateTime?
+  cancelAtPeriodEnd       Boolean       @default(false)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+}
+
+model CheckoutAttempt {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        BillingPlan
+  reference   String      @unique
+  completedAt DateTime?
+  createdAt   DateTime    @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model BillingWebhook {
+  id          String    @id @default(cuid())
+  provider    String    @default("2checkout")
+  messageId   String    @unique
+  messageType String
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  payload     Json
+}
+
+model Profile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  birthDate         DateTime?
+  heightCm          Float?
+  weightKg          Float?
+  goals             String[]
+  emergencyContact  Json?
+  primaryDoctor     Json?
+  conditions        String[]
+  preferredLanguage String    @default("en")
+  timezone          String    @default("UTC")
+}
+
+model MedicalDocument {
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  mimeType       String
+  storageKey     String
+  sha256         String
+  status         DocumentStatus  @default(QUEUED)
+  documentDate   DateTime?
+  provider       String?
+  structuredData Json?
+  createdAt      DateTime        @default(now())
+  events         TimelineEvent[]
+  embeddings     Embedding[]
+
+  @@index([userId, createdAt])
+}
+
+model TimelineEvent {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId  String?
+  document    MedicalDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  occurredAt  DateTime
+  category    String
+  title       String
+  description String
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, occurredAt])
+}
+
+model VoiceCheckIn {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transcript   String
+  sentiment    String?
+  observations Json
+  recordedAt   DateTime  @default(now())
+  symptoms     Symptom[]
+
+  @@index([userId, recordedAt])
+}
+
+model Symptom {
+  id        String       @id @default(cuid())
+  checkInId String
+  checkIn   VoiceCheckIn @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  name      String
+  severity  Int?
+  negated   Boolean      @default(false)
+}
+
+model Medication {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  dosage    String
+  schedule  Json
+  active    Boolean  @default(true)
+  adherence Json?
+  createdAt DateTime @default(now())
+}
+
+model Appointment {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title    String
+  provider String?
+  startsAt DateTime
+  location String?
+  notes    String?
+}
+
+model FamilyMember {
+  id               String    @id @default(cuid())
+  ownerId          String
+  owner            User      @relation("OwnerFamily", fields: [ownerId], references: [id], onDelete: Cascade)
+  memberUserId     String?
+  memberUser       User?     @relation("MemberUser", fields: [memberUserId], references: [id])
+  email            String
+  canViewTimeline  Boolean   @default(false)
+  canReceiveAlerts Boolean   @default(true)
+  acceptedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@unique([ownerId, email])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      NotificationKind
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Embedding {
+  id         String                      @id @default(cuid())
+  documentId String
+  document   MedicalDocument             @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  content    String
+  vector     Unsupported("vector(1536)")
+  metadata   Json?
+
+  @@unique([documentId, chunkIndex])
+}
+
+model Summary {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        String
+  periodStart DateTime
+  periodEnd   DateTime
+  content     String
+  evidence    Json
+  createdAt   DateTime @default(now())
+}
+
+model TrendObservation {
+  id         String   @id @default(cuid())
+  userId     String
+  metric     String
+  window     String
+  direction  String
+  baseline   Float
+  current    Float
+  confidence Float
+  message    String
+  evidence   Json
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  actor        User?    @relation("ActorLogs", fields: [actorId], references: [id], onDelete: SetNull)
+  action       String
+  resourceType String
+  resourceId   String?
+  metadata     Json?
+  ipHash       String?
+  createdAt    DateTime @default(now())
+
+  @@index([actorId, createdAt])
+}

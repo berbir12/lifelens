@@ -1,0 +1,2 @@
+import {NextRequest,NextResponse} from "next/server";import {searchSchema} from "@/lib/validation";
+export async function GET(req:NextRequest){const parsed=searchSchema.safeParse({query:req.nextUrl.searchParams.get("q")??"",cursor:req.nextUrl.searchParams.get("cursor")??undefined});if(!parsed.success)return NextResponse.json({error:"Enter at least two characters"},{status:400});return NextResponse.json({query:parsed.data.query,results:[],nextCursor:null,message:"No matching records were found."})}
