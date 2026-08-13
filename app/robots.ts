@@ -1,0 +1,2 @@
+import type { MetadataRoute } from "next";
+export default function robots():MetadataRoute.Robots{return {rules:{userAgent:"*",allow:["/","/privacy","/terms"],disallow:["/dashboard","/settings","/documents","/vault","/memories","/family","/preparedness","/passport","/doctor-visit","/insights","/medications","/notifications","/search","/story","/api/"]},sitemap:`${process.env.NEXT_PUBLIC_APP_URL??"https://lifelens.bitlabsbuild.com"}/sitemap.xml`}}

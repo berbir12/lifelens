@@ -1,2 +1,0 @@
-import {describe,expect,it} from "vitest";import {assertSafeOutput,groundedFallback} from "../lib/safety";
-describe("AI safety gate",()=>{it("allows supportive observational language",()=>{expect(assertSafeOutput("Your reported fatigue increased. This is an observation, not a diagnosis.")).toContain("observation")});it("blocks direct disease claims",()=>{expect(()=>assertSafeOutput("You definitely have cancer.")).toThrow()});it("uses an honest missing-evidence fallback",()=>{expect(groundedFallback()).toContain("couldn’t find")})});

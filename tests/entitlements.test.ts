@@ -1,0 +1,3 @@
+import { describe,expect,it } from "vitest";
+import { activePlan,PLAN_LIMITS } from "@/lib/entitlements";
+describe("plan entitlements",()=>{it("defaults to Personal",()=>expect(activePlan(null)).toBe("PERSONAL"));it("accepts an active paid period",()=>expect(activePlan({plan:"PLUS",status:"ACTIVE",current_period_end:"2999-01-01T00:00:00Z"})).toBe("PLUS"));it("expires paid access",()=>expect(activePlan({plan:"FAMILY",status:"ACTIVE",current_period_end:"2020-01-01T00:00:00Z"})).toBe("PERSONAL"));it("increases real capacity",()=>{expect(PLAN_LIMITS.PLUS.documents).toBeGreaterThan(PLAN_LIMITS.PERSONAL.documents);expect(PLAN_LIMITS.FAMILY.familyMembers).toBeGreaterThan(PLAN_LIMITS.PLUS.familyMembers)})});
