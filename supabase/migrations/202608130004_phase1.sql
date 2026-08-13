@@ -1,0 +1,14 @@
+alter table public.medications add column if not exists reason text;
+alter table public.medications add column if not exists prescriber text;
+alter table public.medications add column if not exists refill_date date;
+alter table public.medications add column if not exists expiration_date date;
+alter table public.medications add column if not exists remaining_pills integer;
+alter table public.medications add column if not exists photo_path text;
+alter table public.appointments add column if not exists completed_at timestamptz;
+alter table public.appointments add column if not exists follow_up_due date;
+create table if not exists public.vault_folders (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, name text not null, color text not null default '#60715e', created_at timestamptz not null default now(), unique(user_id,name));
+create table if not exists public.memories (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, memory_date date not null default current_date, caption text not null, people text[] not null default '{}', mood text, photo_path text, created_at timestamptz not null default now());
+alter table public.documents add column if not exists folder_id uuid references public.vault_folders(id) on delete set null;
+do $$ declare t text; begin foreach t in array array['vault_folders','memories'] loop execute format('alter table public.%I enable row level security',t); execute format('drop policy if exists %I on public.%I',t||'_own',t); execute format('create policy %I on public.%I for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id)',t||'_own',t); execute format('grant select,insert,update,delete on public.%I to authenticated',t); end loop; end $$;
+insert into public.vault_folders(user_id,name) select id,'Blood Tests' from auth.users on conflict do nothing;
+insert into public.vault_folders(user_id,name) select id,'Prescriptions' from auth.users on conflict do nothing;

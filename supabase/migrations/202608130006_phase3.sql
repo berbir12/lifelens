@@ -1,0 +1,10 @@
+create table if not exists public.emergency_profiles (user_id uuid primary key references auth.users(id) on delete cascade, access_token uuid not null default gen_random_uuid() unique, blood_type text, allergies text[] not null default '{}', conditions text[] not null default '{}', emergency_contact text, insurance text, doctor_contact text, is_enabled boolean not null default false, updated_at timestamptz not null default now());
+alter table public.emergency_profiles enable row level security;
+drop policy if exists "emergency_profiles_own" on public.emergency_profiles;
+create policy "emergency_profiles_own" on public.emergency_profiles for all to authenticated using ((select auth.uid())=user_id) with check ((select auth.uid())=user_id);
+grant select,insert,update,delete on public.emergency_profiles to authenticated;
+create table if not exists public.doctor_questions (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, question text not null, answered_at timestamptz, created_at timestamptz not null default now());
+alter table public.doctor_questions enable row level security;
+drop policy if exists "doctor_questions_own" on public.doctor_questions;
+create policy "doctor_questions_own" on public.doctor_questions for all to authenticated using ((select auth.uid())=user_id) with check ((select auth.uid())=user_id);
+grant select,insert,update,delete on public.doctor_questions to authenticated;
