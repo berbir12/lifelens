@@ -9,4 +9,11 @@ export async function proxy(request:NextRequest){
   await supabase.auth.getClaims();
   return response;
 }
-export const config={matcher:["/((?!_next/static|_next/image|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]};
+// Keep public landing and social-card pages fast for preview crawlers.
+export const config={matcher:[
+  "/dashboard/:path*","/settings/:path*","/documents/:path*","/vault/:path*",
+  "/memories/:path*","/family/:path*","/preparedness/:path*","/passport/:path*",
+  "/doctor-visit/:path*","/insights/:path*","/medications/:path*",
+  "/notifications/:path*","/search/:path*","/story/:path*","/onboarding/:path*",
+  "/api/:path*",
+]};
