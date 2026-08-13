@@ -62,8 +62,8 @@ export default function Landing(){return <main className="min-h-screen bg-[#f4f2
     </div>
     <div className="grid lg:grid-cols-3">
       <Price name="Personal" price="$0" cadence="forever" description="For starting a private health record." features={["25 processed documents","Unlimited manual entries","Daily check-ins","Timeline and record search","Complete record export"]}/>
-      <Price name="Plus" price="$8" cadence="per month" description="For an active, long-term record." features={["250 processed documents","Weekly health story","Trend observations","2 trusted family members","Appointment preparation summary"]} featured/>
-      <Price name="Family" price="$14" cadence="per month" description="For ongoing support from a care circle." features={["500 processed documents","Everything in Plus","Up to 5 family members","Permissioned timeline access","Weekly family email summary"]}/>
+      <Price name="Plus" price="$8" cadence="for 30 days" description="For an active, long-term record." features={["250 processed documents","Weekly health story","Trend observations","2 trusted family members","Appointment preparation summary"]} featured/>
+      <Price name="Family" price="$14" cadence="for 30 days" description="For ongoing support from a care circle." features={["500 processed documents","Everything in Plus","Up to 5 family members","Permissioned timeline access","Weekly family email summary"]}/>
     </div>
     <div className="flex flex-col justify-between gap-4 border-t border-[#182019]/20 p-6 text-sm md:flex-row md:items-center md:p-10"><div><b>Annual billing saves two months.</b><p className="mt-1 text-xs text-black/45">Plus: $80/year · Family: $140/year</p></div><p className="max-w-lg text-xs leading-5 text-black/45">Document limits count files successfully processed, not failed uploads. Original files remain available after downgrading; new processing pauses above the plan limit.</p></div>
   </section>

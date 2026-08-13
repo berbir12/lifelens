@@ -71,7 +71,7 @@ model BillingSubscription {
   id                      String        @id @default(cuid())
   userId                  String        @unique
   user                    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider                String        @default("2checkout")
+  provider                String        @default("chapa")
   plan                    BillingPlan   @default(PERSONAL)
   status                  BillingStatus @default(PENDING)
   providerOrderRef        String?       @unique
@@ -96,7 +96,7 @@ model CheckoutAttempt {
 
 model BillingWebhook {
   id          String    @id @default(cuid())
-  provider    String    @default("2checkout")
+  provider    String    @default("chapa")
   messageId   String    @unique
   messageType String
   receivedAt  DateTime  @default(now())
