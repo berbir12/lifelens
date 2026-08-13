@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   description: "A calm, private health memory for you and your family.",
   icons: { icon: "/icon.svg" },
   openGraph: { title: "LifeLens — Your health story, remembered", description: "A private timeline for health records, memories, and family support.", type: "website" },
+  twitter: {
+    card: "summary_large_image",
+    title: "LifeLens — Your health story, remembered",
+    description: "A private timeline for health records, memories, and family support.",
+    images: ["/opengraph-image.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
