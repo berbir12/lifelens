@@ -8,12 +8,19 @@ export const metadata: Metadata = {
   title: "LifeLens — Your health story, remembered",
   description: "A calm, private health memory for you and your family.",
   icons: { icon: "/icon.svg" },
-  openGraph: { title: "LifeLens — Your health story, remembered", description: "A private timeline for health records, memories, and family support.", type: "website" },
+  openGraph: {
+    title: "LifeLens — Your health story, remembered",
+    description: "A private timeline for health records, memories, and family support.",
+    type: "website",
+    url: "/",
+    siteName: "LifeLens",
+    images: [{ url: "/lifelens-card.jpg?v=2", width: 1200, height: 630, alt: "LifeLens — Your health story, remembered" }],
+  },
   twitter: {
     card: "summary_large_image",
     title: "LifeLens — Your health story, remembered",
     description: "A private timeline for health records, memories, and family support.",
-    images: ["/opengraph-image.png"],
+    images: [{ url: "/lifelens-card.jpg?v=2", alt: "LifeLens — Your health story, remembered" }],
   },
 };
 
