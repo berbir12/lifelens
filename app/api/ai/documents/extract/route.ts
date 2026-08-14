@@ -2,7 +2,7 @@ import { generateText, Output } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_PROMPT_VERSION, documentExtractionSchema, extractionInstructions } from "@/lib/ai/document-extraction";
-import { vertexConfig, vertexModel } from "@/lib/ai/vertex";
+import { geminiConfig, geminiModel } from "@/lib/ai/gemini";
 import { activePlan, PLAN_LIMITS } from "@/lib/entitlements";
 import { storageAdmin } from "@/lib/storage";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (process.env.AI_DOCUMENT_REVIEW_ENABLED !== "true") return NextResponse.json({ error: "AI document review is not enabled." }, { status: 503 });
-  if (!vertexConfig()) return NextResponse.json({ error: "AI document review is not configured yet." }, { status: 503 });
+  if (!geminiConfig()) return NextResponse.json({ error: "AI document review is not configured yet." }, { status: 503 });
 
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid document." }, { status: 400 });
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const { data: blob, error: downloadError } = await storageAdmin().download(document.storage_key);
     if (downloadError || !blob) throw new Error("DOCUMENT_DOWNLOAD_FAILED");
     const bytes = new Uint8Array(await blob.arrayBuffer());
-    const { model, modelId } = await vertexModel();
+    const { model, modelId } = geminiModel();
     const result = await generateText({
       model,
       output: Output.object({
@@ -62,7 +62,6 @@ export async function POST(request: NextRequest) {
         ],
       }],
       abortSignal: AbortSignal.timeout(45_000),
-      providerOptions: { vertex: { labels: { feature: "document-extraction" } } },
     });
     const extraction = result.output;
     const extractionId = crypto.randomUUID();
