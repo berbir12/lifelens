@@ -2,6 +2,7 @@ import "server-only";
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 
 export const DEFAULT_GEMINI_MODEL="gemini-3.5-flash";
+export const DEFAULT_GEMINI_ASSISTANT_MODEL="gemini-3.5-flash-lite";
 const LEGACY_MODELS=new Set(["gemini-2.5-flash"]);
 
 export function geminiConfig(){
@@ -11,9 +12,12 @@ export function geminiConfig(){
   return apiKey?{apiKey,model}:null;
 }
 
-export function geminiModel(){
+export function geminiModel(modelOverride?:string){
   const config=geminiConfig();
   if(!config)throw new Error("GEMINI_NOT_CONFIGURED");
   const provider=createGoogleGenerativeAI({apiKey:config.apiKey});
-  return {model:provider(config.model),modelId:config.model};
+  const modelId=modelOverride?.trim()||config.model;
+  return {model:provider(modelId),modelId};
 }
+
+export function geminiAssistantModel(){return geminiModel(process.env.GEMINI_ASSISTANT_MODEL?.trim()||DEFAULT_GEMINI_ASSISTANT_MODEL)}
