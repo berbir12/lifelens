@@ -40,10 +40,11 @@ async function inviteFamilyMember(supabase: NonNullable<Awaited<ReturnType<typeo
   if (!emailConfigured()) return NextResponse.json({ error: "Family invitation email is not configured yet." }, { status: 503 });
   const email = payload.email.toLowerCase();
   if (email === user.email?.toLowerCase()) return NextResponse.json({ error: "Invite someone other than yourself." }, { status: 400 });
-  const [{ data: subscription }, { data: existing }, { count }] = await Promise.all([
+  const [{ data: subscription }, { data: existing }, { count }, { data: profile }] = await Promise.all([
     supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id", user.id).maybeSingle(),
     supabase.from("family_members").select("id,status").eq("user_id", user.id).eq("email", email).maybeSingle(),
     supabase.from("family_members").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
   ]);
   if (existing?.status === "accepted") return NextResponse.json({ error: "This person is already in your Family Circle." }, { status: 409 });
   const plan = activePlan(subscription);
@@ -56,7 +57,8 @@ async function inviteFamilyMember(supabase: NonNullable<Awaited<ReturnType<typeo
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
   if (!appUrl) return NextResponse.json({ error: "The production application URL is not configured." }, { status: 503 });
-  const inviterName = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "A family member");
+  const onboardingName=profile?.full_name?.trim();
+  const inviterName=onboardingName||String(user.user_metadata?.full_name??user.user_metadata?.name??user.email?.split("@")[0]??"A family member");
   try {
     const deliveryId = await sendFamilyInvitation({ to: email, inviterName, acceptUrl: `${appUrl}/family/invite/${token}`, invitationId: `${invitationId}-${hash.slice(0, 12)}` });
     await supabase.from("family_members").update({ email_sent_at: new Date().toISOString(), email_delivery_id: deliveryId }).eq("id", invitationId).eq("user_id", user.id);
