@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export default function PrivacyPage() {
-  const support=process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
+  const support=process.env.NEXT_PUBLIC_SUPPORT_EMAIL??"lifelens@bitlabsbuild.com";
   return <LegalPage title="Privacy Policy" updated="August 13, 2026">
     <p>LifeLens stores health information that you choose to provide, including profile details, medications, appointments, check-ins, documents, memories, family-circle entries, and emergency information.</p>
     <h2>How we use information</h2><p>We use your information only to operate the features you request, secure your account, provide support, and process payments. LifeLens does not sell personal or health information.</p>
