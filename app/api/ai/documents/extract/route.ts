@@ -1,4 +1,4 @@
-import { generateText, Output } from "ai";
+import { APICallError, generateText, Output } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_PROMPT_VERSION, documentExtractionSchema, extractionInstructions } from "@/lib/ai/document-extraction";
@@ -9,6 +9,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 
 const requestSchema = z.object({ documentId: z.string().uuid() });
 const SUPPORTED = new Set(["application/pdf", "image/jpeg", "image/png"]);
+export const maxDuration=60;
 
 export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServer();
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
           { type: "file", data: bytes, mediaType: document.mime_type, filename: document.name },
         ],
       }],
-      abortSignal: AbortSignal.timeout(45_000),
+      abortSignal: AbortSignal.timeout(55_000),
     });
     const extraction = result.output;
     const extractionId = crypto.randomUUID();
@@ -83,8 +84,24 @@ export async function POST(request: NextRequest) {
     }).eq("id", requestId).eq("user_id", user.id);
     return NextResponse.json({ extractionId, extraction });
   } catch (cause) {
-    await supabase.from("ai_requests").update({ status: "FAILED", error_code: cause instanceof Error ? cause.message.slice(0, 80) : "UNKNOWN", completed_at: new Date().toISOString() }).eq("id", requestId).eq("user_id", user.id);
-    console.error("ai.document_extraction_failed", { requestId, code: cause instanceof Error ? cause.message : "unknown" });
-    return NextResponse.json({ error: "This document could not be reviewed. Nothing was saved to your health record." }, { status: 502 });
+    const failure=classifyFailure(cause);
+    await supabase.from("ai_requests").update({status:"FAILED",error_code:failure.code,completed_at:new Date().toISOString()}).eq("id",requestId).eq("user_id",user.id);
+    console.error("ai.document_extraction_failed",{requestId,code:failure.code,providerStatus:failure.providerStatus});
+    return NextResponse.json({error:failure.message},{status:failure.status});
   }
+}
+
+function classifyFailure(cause:unknown):{code:string;message:string;status:number;providerStatus?:number}{
+  if(cause instanceof Error&&cause.message==="DOCUMENT_DOWNLOAD_FAILED")return {code:"DOCUMENT_DOWNLOAD_FAILED",message:"The stored document could not be downloaded. Upload it again and retry.",status:502};
+  if(cause instanceof Error&&cause.message==="EXTRACTION_SAVE_FAILED")return {code:"EXTRACTION_SAVE_FAILED",message:"The review completed, but its draft could not be saved.",status:500};
+  if(cause instanceof Error&&(cause.name==="TimeoutError"||cause.name==="AbortError"))return {code:"AI_TIMEOUT",message:"The AI review took too long. Try a smaller document or try again.",status:504};
+  if(APICallError.isInstance(cause)){
+    const providerStatus=cause.statusCode;
+    if(providerStatus===401||providerStatus===403)return {code:"AI_AUTH_FAILED",message:"Gemini authentication failed. Check the GEMINI_API_KEY server variable.",status:503,providerStatus};
+    if(providerStatus===404)return {code:"AI_MODEL_UNAVAILABLE",message:"The configured Gemini model is unavailable. Check GEMINI_MODEL.",status:503,providerStatus};
+    if(providerStatus===429)return {code:"AI_QUOTA_EXCEEDED",message:"The free Gemini quota is currently exhausted. Try again after the quota resets.",status:429,providerStatus};
+    if(providerStatus===400)return {code:"AI_DOCUMENT_REJECTED",message:"Gemini could not process this document. Try a smaller PDF, PNG, or JPEG.",status:422,providerStatus};
+    return {code:"AI_PROVIDER_ERROR",message:"Gemini could not review this document right now. Try again shortly.",status:502,providerStatus};
+  }
+  return {code:"AI_REVIEW_FAILED",message:"This document could not be reviewed. Nothing was saved to your health record.",status:502};
 }
