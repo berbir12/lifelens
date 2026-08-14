@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { FileSearch, FileText, Search, ShieldCheck, Upload } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import {DocumentExtractionReview as ExtractionReview} from "@/components/document-extraction-review";
 
 type Doc = { id: string; name: string; mimeType: string; status: string; createdAt: string };
 type Job = { id: string; file: File; status: string; error?: string };
@@ -17,7 +18,7 @@ type Medication = {
   sourcePage: number | null;
   confidence: number;
 };
-type Extraction = { documentType: string; summary: string; medications: Medication[]; warnings: string[] };
+type Extraction = {documentType:string;summary:string;documentDate:string|null;provider:string|null;facility:string|null;facts:{label:string;value:string;sourcePage:number|null;confidence:number}[];followUpItems:{instruction:string;sourcePage:number|null}[];timelineDraft:{title:string;description:string;occurredOn:string|null};medications:Medication[];warnings:string[]};
 type Review = { busy?: boolean; error?: string; extractionId?: string; extraction?: Extraction };
 
 const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -107,7 +108,7 @@ export function DocumentLibrary() {
   </div>;
 }
 
-function ExtractionReview({ extractionId, extraction }: { extractionId: string; extraction: Extraction }) {
+function LegacyExtractionReview({ extractionId, extraction }: { extractionId: string; extraction: Extraction }) {
   return <section className="border-t border-black/15 bg-[#eee4d8] p-5">
     <p className="text-xs font-semibold uppercase tracking-[.12em]">AI draft · confirm before saving</p>
     <p className="mt-2 max-w-3xl text-sm leading-6 text-black/60">{extraction.summary}</p>

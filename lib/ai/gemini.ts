@@ -1,11 +1,13 @@
 import "server-only";
 import {createGoogleGenerativeAI} from "@ai-sdk/google";
 
-export const DEFAULT_GEMINI_MODEL="gemini-2.5-flash";
+export const DEFAULT_GEMINI_MODEL="gemini-3.5-flash";
+const LEGACY_MODELS=new Set(["gemini-2.5-flash"]);
 
 export function geminiConfig(){
   const apiKey=process.env.GEMINI_API_KEY?.trim();
-  const model=process.env.GEMINI_MODEL?.trim()||DEFAULT_GEMINI_MODEL;
+  const configuredModel=process.env.GEMINI_MODEL?.trim();
+  const model=!configuredModel||LEGACY_MODELS.has(configuredModel)?DEFAULT_GEMINI_MODEL:configuredModel;
   return apiKey?{apiKey,model}:null;
 }
 

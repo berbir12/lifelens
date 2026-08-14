@@ -14,8 +14,9 @@ Apply `supabase/migrations/202608140001_ai_document_extraction.sql`. It creates 
 2. Add these server-only production variables:
 
    - `GEMINI_API_KEY`
-   - `GEMINI_MODEL=gemini-2.5-flash`
+   - `GEMINI_MODEL=gemini-3.5-flash`
    - `AI_DOCUMENT_REVIEW_ENABLED=false`
+   - `AI_ASSISTANT_ENABLED=false`
 
 3. Never prefix the API key with `NEXT_PUBLIC_`.
 4. Keep AI review disabled for genuine medical records while using unpaid Gemini services.
@@ -25,6 +26,8 @@ Apply `supabase/migrations/202608140001_ai_document_extraction.sql`. It creates 
 Google's unpaid Gemini terms say submitted content and generated responses may be used to improve its products and may be processed by human reviewers. Do not send personal, confidential, sensitive, or identifiable health information through the unpaid service.
 
 The free tier is suitable only for synthetic or properly de-identified evaluation documents. Set `AI_DOCUMENT_REVIEW_ENABLED=true` only in a controlled test environment using that data. Before enabling the feature for real user documents, move to service terms and data controls appropriate for identifiable health information.
+
+The dashboard assistant is also opt-in. When `AI_ASSISTANT_ENABLED=true`, each question sends a bounded snapshot of the signed-in user's Supabase profile, medications, appointments, timeline, check-ins, document metadata, and saved AI document reviews to Gemini. Keep it disabled for genuine user health records while using unpaid Gemini services.
 
 ## Operational checks
 
