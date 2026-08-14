@@ -1,9 +1,9 @@
 export type Plan = "PERSONAL" | "PLUS" | "FAMILY";
 
-export const PLAN_LIMITS: Record<Plan, { documents: number; familyMembers: number }> = {
-  PERSONAL: { documents: 25, familyMembers: 1 },
-  PLUS: { documents: 250, familyMembers: 2 },
-  FAMILY: { documents: 500, familyMembers: 5 },
+export const PLAN_LIMITS: Record<Plan, { documents: number; familyMembers: number; aiRequestsPerDay: number }> = {
+  PERSONAL: { documents: 25, familyMembers: 1, aiRequestsPerDay: 3 },
+  PLUS: { documents: 250, familyMembers: 2, aiRequestsPerDay: 20 },
+  FAMILY: { documents: 500, familyMembers: 5, aiRequestsPerDay: 50 },
 };
 
 type Subscription = { plan?: string | null; status?: string | null; current_period_end?: string | null } | null;

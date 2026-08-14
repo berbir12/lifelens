@@ -1,2 +1,15 @@
-import {NextResponse,type NextRequest} from "next/server";import {createSupabaseServer} from "@/lib/supabase/server";
-export async function GET(request:NextRequest){const code=request.nextUrl.searchParams.get("code"),next=request.nextUrl.searchParams.get("next")??"/onboarding";if(code){const supabase=await createSupabaseServer();if(!supabase)return NextResponse.redirect(new URL("/login?error=configuration",request.url));const {error}=await supabase.auth.exchangeCodeForSession(code);if(!error)return NextResponse.redirect(new URL(next,request.url))}return NextResponse.redirect(new URL("/login?error=oauth",request.url))}
+import {NextResponse,type NextRequest} from "next/server";
+import {createSupabaseServer} from "@/lib/supabase/server";
+import {safeReturnPath} from "@/lib/family-invitations";
+
+export async function GET(request:NextRequest){
+  const code=request.nextUrl.searchParams.get("code");
+  const next=safeReturnPath(request.nextUrl.searchParams.get("next"),"/onboarding");
+  if(code){
+    const supabase=await createSupabaseServer();
+    if(!supabase)return NextResponse.redirect(new URL("/login?error=configuration",request.url));
+    const {error}=await supabase.auth.exchangeCodeForSession(code);
+    if(!error)return NextResponse.redirect(new URL(next,request.url));
+  }
+  return NextResponse.redirect(new URL("/login?error=oauth",request.url));
+}
