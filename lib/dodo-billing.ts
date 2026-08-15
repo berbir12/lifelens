@@ -1,5 +1,5 @@
 import DodoPayments from "dodopayments";
-import type {PaidPlan} from "@/lib/billing";
+export type PaidPlan="PLUS"|"FAMILY";
 
 export type DodoEnvironment="test_mode"|"live_mode";
 export type BillingInterval="monthly"|"annual";
