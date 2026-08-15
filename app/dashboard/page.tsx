@@ -14,7 +14,7 @@ export default async function Page(){
     supabase.from("check_ins").select("id,transcript,recorded_at").eq("user_id",authUser.id).order("recorded_at",{ascending:false}).limit(4),
     supabase.from("family_members").select("id,email,status,can_view_timeline").eq("user_id",authUser.id).order("created_at",{ascending:false}).limit(5),
     supabase.from("timeline_events").select("id,category,title,description,occurred_at,source").eq("user_id",authUser.id).order("occurred_at",{ascending:false}).limit(6),
-    supabase.from("subscriptions").select("plan,status,current_period_end").eq("user_id",authUser.id).maybeSingle(),
+    supabase.from("subscriptions").select("provider,plan,status,current_period_end").eq("user_id",authUser.id).maybeSingle(),
   ]);
   const plan=activePlan(subscription.data);
   const normalizedSubscription=subscription.data?{...subscription.data,plan,status:plan==="PERSONAL"?"EXPIRED":subscription.data.status,current_period_end:plan==="PERSONAL"?null:subscription.data.current_period_end}:null;
