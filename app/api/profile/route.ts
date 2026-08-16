@@ -1,3 +1,20 @@
-import {NextRequest,NextResponse} from "next/server";import {z} from "zod";import {createSupabaseServer} from "@/lib/supabase/server";
+import {NextRequest,NextResponse} from "next/server";
+import {z} from "zod";
+import {createSupabaseServer} from "@/lib/supabase/server";
+
 const schema=z.object({name:z.string().trim().min(2).max(100),birthDate:z.string().date().optional().or(z.literal("")),heightCm:z.number().min(80).max(250).optional(),weightKg:z.number().min(20).max(400).optional(),goals:z.array(z.string().max(100)).max(8),emergencyContact:z.string().trim().max(200).optional(),primaryDoctor:z.string().trim().max(200).optional(),conditions:z.string().max(2000).optional(),preferredLanguage:z.string().min(2).max(10),timezone:z.string().min(1).max(80)});
-export async function POST(req:NextRequest){const supabase=await createSupabaseServer();if(!supabase)return NextResponse.json({error:"Supabase is not configured."},{status:503});const {data:{user},error:authError}=await supabase.auth.getUser();if(authError||!user)return NextResponse.json({error:"Your session has expired. Please sign in again."},{status:401});const parsed=schema.safeParse(await req.json());if(!parsed.success)return NextResponse.json({error:"Please review your details",issues:parsed.error.flatten()},{status:400});const p=parsed.data,conditions=p.conditions?.split(",").map(x=>x.trim()).filter(Boolean)??[];const {error}=await supabase.from("profiles").upsert({user_id:user.id,email:user.email??null,full_name:p.name,birth_date:p.birthDate||null,height_cm:p.heightCm??null,weight_kg:p.weightKg??null,goals:p.goals,conditions,emergency_contact:p.emergencyContact||null,primary_doctor:p.primaryDoctor||null,preferred_language:p.preferredLanguage,timezone:p.timezone,updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){console.error("profile.supabase_save_failed",{code:error.code,message:error.message});if(error.code==="42P01")return NextResponse.json({error:"The Supabase profiles table is missing. Apply the included migration."},{status:503});return NextResponse.json({error:"We couldn’t save your profile in Supabase right now."},{status:500})}return NextResponse.json({ok:true})}
+
+export async function POST(req:NextRequest){
+  const supabase=await createSupabaseServer();
+  if(!supabase)return NextResponse.json({error:"Supabase is not configured."},{status:503});
+  const {data:{user},error:authError}=await supabase.auth.getUser();
+  if(authError||!user)return NextResponse.json({error:"Your session has expired. Please sign in again."},{status:401});
+  const parsed=schema.safeParse(await req.json());
+  if(!parsed.success)return NextResponse.json({error:"Please review your details",issues:parsed.error.flatten()},{status:400});
+  const p=parsed.data,conditions=p.conditions?.split(",").map(x=>x.trim()).filter(Boolean)??[];
+  const {error}=await supabase.from("profiles").upsert({user_id:user.id,email:user.email??null,full_name:p.name,birth_date:p.birthDate||null,height_cm:p.heightCm??null,weight_kg:p.weightKg??null,goals:p.goals,conditions,emergency_contact:p.emergencyContact||null,primary_doctor:p.primaryDoctor||null,preferred_language:p.preferredLanguage,timezone:p.timezone,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  if(error){console.error("profile.supabase_save_failed",{code:error.code,message:error.message});if(error.code==="42P01")return NextResponse.json({error:"The Supabase profiles table is missing. Apply the included migration."},{status:503});return NextResponse.json({error:"We couldn’t save your profile in Supabase right now."},{status:500})}
+  const {error:metadataError}=await supabase.auth.updateUser({data:{full_name:p.name,name:p.name}});
+  if(metadataError)console.error("profile.auth_metadata_update_failed",{message:metadataError.message});
+  return NextResponse.json({ok:true});
+}
