@@ -1,4 +1,7 @@
+import type {Metadata} from "next";
 import Link from "next/link";
+
+export const metadata:Metadata={title:"Privacy Policy",description:"How LifeLens collects, stores, protects, and processes personal health record information.",alternates:{canonical:"/privacy"}};
 
 export default function PrivacyPage() {
   const support=process.env.NEXT_PUBLIC_SUPPORT_EMAIL??"lifelens@bitlabsbuild.com";

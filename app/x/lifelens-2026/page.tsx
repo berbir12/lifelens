@@ -6,7 +6,8 @@ const description="Keep medications, appointments, documents, memories, and fami
 
 export const metadata:Metadata={
   title,description,
-  alternates:{canonical:"/x/lifelens-2026"},
+  alternates:{canonical:"/"},
+  robots:{index:false,follow:true},
   openGraph:{title,description,type:"website",siteName:"LifeLens",url:"/x/lifelens-2026",images:[{url:"/lifelens-launch-card-v3.jpg",secureUrl:"/lifelens-launch-card-v3.jpg",type:"image/jpeg",width:1200,height:630,alt:title}]},
   twitter:{card:"summary_large_image",title,description,images:[{url:"/lifelens-launch-card-v3.jpg",alt:title}]},
 };

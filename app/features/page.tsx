@@ -1,0 +1,19 @@
+import type {Metadata} from "next";
+import Link from "next/link";
+
+export const metadata:Metadata={title:"Personal Health Record Features",description:"Explore LifeLens features for organizing medications, appointments, medical documents, health timelines, family check-ins, emergency information, and doctor visits.",alternates:{canonical:"/features"},openGraph:{title:"LifeLens personal health record features",description:"One private place for medications, appointments, medical documents, health timelines, and family support.",url:"/features",type:"website"}};
+
+const features=[
+  ["Health timeline","Keep medical events, life events, check-ins, and milestones in chronological order so you can understand what happened and when."],
+  ["Medicine cabinet","Record medicine names, dosage, schedule, prescriber, reason, refill date, expiration date, and a package photo."],
+  ["Appointment tracking","Organize upcoming and previous appointments with the provider, location, date, and notes."],
+  ["Private document vault","Store laboratory reports, imaging reports, prescriptions, insurance documents, vaccination records, and other health files."],
+  ["Ask LifeLens","Ask factual questions about information already saved in your private record, such as whether an MRI report exists or when an appointment is scheduled."],
+  ["Family Circle","Invite relatives or caregivers and control which parts of the record each person can view."],
+  ["Doctor Visit Mode","Prepare a printable summary of medications, conditions, recent symptoms, recorded results, and questions for an appointment."],
+  ["Emergency card","Create a limited emergency profile with blood type, allergies, conditions, medications, contacts, and insurance details."],
+  ["Health passport","Prepare an organized travel copy of vaccines, medications, insurance, medical history, and emergency information."],
+  ["Health story","View health records alongside memories and milestones without turning personal history into a diagnosis."],
+] as const;
+
+export default function FeaturesPage(){return <main className="min-h-screen bg-[#f4f2ec] text-[#182019]"><header className="border-b border-black/20"><div className="mx-auto flex h-16 max-w-6xl items-center px-5"><Link href="/" className="text-lg font-bold">LifeLens</Link><Link href="/login" className="ml-auto border border-black px-4 py-2 text-sm font-semibold">Create your record</Link></div></header><article className="mx-auto max-w-6xl px-5 py-16 md:py-24"><p className="text-xs font-semibold uppercase tracking-[.16em] text-black/40">Features</p><h1 className="mt-5 max-w-4xl text-5xl font-medium leading-[.95] tracking-[-.06em] md:text-7xl">A personal health record built around your life.</h1><p className="mt-8 max-w-2xl text-lg leading-8 text-black/55">LifeLens helps you retrieve health information you have already recorded. It organizes the practical details around care without diagnosing conditions or recommending treatment.</p><div className="mt-16 grid border-l border-t border-black/20 md:grid-cols-2">{features.map(([title,body])=><section key={title} className="border-b border-r border-black/20 p-6 md:p-8"><h2 className="text-xl font-semibold">{title}</h2><p className="mt-4 text-sm leading-7 text-black/55">{body}</p></section>)}</div><section className="mt-16 bg-[#23392c] p-8 text-white md:flex md:items-end md:justify-between"><div><h2 className="text-3xl font-medium tracking-[-.04em]">Start with the free Personal plan.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-white/60">Create a private record, add manual entries, and organize your health history before choosing a paid plan.</p></div><Link href="/login" className="mt-6 inline-block bg-white px-5 py-3 text-sm font-semibold text-[#182019] md:mt-0">Create your record</Link></section></article></main>}

@@ -1,4 +1,7 @@
+import type {Metadata} from "next";
 import Link from "next/link";
+
+export const metadata:Metadata={title:"Terms of Service",description:"Terms governing access to and use of the LifeLens personal health record service.",alternates:{canonical:"/terms"}};
 
 export default function TermsPage(){
   const legalName=process.env.NEXT_PUBLIC_LEGAL_NAME??"LifeLens",jurisdiction=process.env.NEXT_PUBLIC_LEGAL_JURISDICTION,support=process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
