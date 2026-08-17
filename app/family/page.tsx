@@ -3,6 +3,7 @@ import {AppShell} from "@/components/app-shell";
 import {FamilyCheckinForm} from "@/components/family-checkin-form";
 import {createSupabaseAdmin} from "@/lib/supabase/admin";
 import {createSupabaseServer} from "@/lib/supabase/server";
+import {HelpBoardManager,type ManagedHelpBoard} from "@/components/help-board-manager";
 
 export default async function Family(){
   const supabase=await createSupabaseServer();
@@ -18,19 +19,25 @@ export default async function Family(){
   const timelineOwnerIds=joined.filter(x=>x.can_view_timeline).map(x=>x.user_id);
 
   const relatedProfileIds=[...new Set([...joinedOwnerIds,...owned.map(x=>x.member_user_id).filter((id):id is string=>Boolean(id))])];
-  const [checkinsResult,timelineResult,profilesResult]=await Promise.all([
+  const [checkinsResult,timelineResult,profilesResult,helpBoardsResult,ownerProfileResult]=await Promise.all([
     supabase.from("family_checkins").select("id,owner_id,author_id,visit_date,note,mood,walking,appetite").or(`owner_id.eq.${user.id},author_id.eq.${user.id}${joinedOwnerIds.length?`,owner_id.in.(${joinedOwnerIds.join(",")})`:""}`).order("visit_date",{ascending:false}).limit(100),
     timelineOwnerIds.length?supabase.from("timeline_events").select("id,user_id,category,title,description,occurred_at,source").in("user_id",timelineOwnerIds).order("occurred_at",{ascending:false}).limit(100):Promise.resolve({data:[]}),
     relatedProfileIds.length?createSupabaseAdmin().from("profiles").select("user_id,full_name").in("user_id",relatedProfileIds):Promise.resolve({data:[]}),
+    supabase.from("help_boards").select("id,slug,circle_label,archived_at,created_at").eq("owner_id",user.id).order("created_at",{ascending:false}),
+    supabase.from("profiles").select("full_name").eq("user_id",user.id).maybeSingle(),
   ]);
   const checkins=checkinsResult.data??[],timeline=timelineResult.data??[];
   const names=new Map((profilesResult.data??[]).map(profile=>[profile.user_id,profile.full_name]));
+  const helpBoards:ManagedHelpBoard[]=(helpBoardsResult.data??[]).map(board=>({id:board.id,slug:board.slug,label:board.circle_label,archivedAt:board.archived_at,createdAt:board.created_at}));
+  const ownerName=ownerProfileResult.data?.full_name??user.email?.split("@")[0]??"me";
 
   return <AppShell eyebrow="Collaborative journal" title="Family Circle" description="Visits and observations from the people trusted to support your care.">
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="border border-black/20 bg-[#faf9f5] p-5"><h2 className="font-semibold">Your care circle</h2>{owned.length?owned.map(x=><div key={x.id} className="mt-4 border-t border-black/10 pt-4"><p className="text-sm font-semibold">{(x.member_user_id&&names.get(x.member_user_id))||x.email}</p><p className="mt-1 text-xs text-black/45">{x.status==="accepted"?"Family member":x.email} · {x.status} · timeline {x.can_view_timeline?"on":"off"} · contributions {x.can_contribute?"on":"off"}</p></div>):<p className="mt-4 text-sm text-black/45">Invite family members from the dashboard.</p>}</section>
       <section className="border border-black/20 bg-[#faf9f5] p-5"><h2 className="font-semibold">Circles you support</h2>{joined.length?joined.map(circle=><div key={circle.id} className="mt-4 border-t border-black/10 pt-4"><p className="text-sm font-semibold">Supporting {names.get(circle.user_id)??"your family member"}</p><p className="mt-1 text-xs text-black/45">Timeline {circle.can_view_timeline?"shared":"private"} · contributions {circle.can_contribute?"allowed":"view only"}</p></div>):<p className="mt-4 text-sm text-black/45">No shared circles yet.</p>}</section>
     </div>
+
+    <HelpBoardManager initialBoards={helpBoards} defaultLabel={`Helping with ${ownerName}`}/>
 
     {joined.map(circle=>circle.can_contribute?<div key={circle.id} className="mt-6"><FamilyCheckinForm ownerId={circle.user_id} ownerName={names.get(circle.user_id)??"your family member"}/></div>:<section key={circle.id} className="mt-6 border border-black/20 bg-[#faf9f5] p-5"><h2 className="font-semibold">Supporting {names.get(circle.user_id)??"your family member"}</h2><p className="mt-2 text-sm text-black/50">You have view-only access to this circle.</p></section>)}
 
