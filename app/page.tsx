@@ -54,7 +54,7 @@ export default function Landing(){return <main className="min-h-screen bg-[#f4f2
     <div className="border-b border-[#182019]/20 p-6 md:p-10 lg:border-b-0 lg:border-r"><p className="text-xs font-semibold uppercase tracking-[.16em]">What it will not do</p><h2 className="mt-14 max-w-xl text-4xl font-medium leading-tight tracking-[-.05em] md:text-5xl">No diagnosis.<br/>No treatment advice.<br/>No invented certainty.</h2></div>
     <div className="divide-y divide-[#182019]/15">{[
       ["You control the record","Timeline events come from entries you and permitted family members create."],
-      ["Files stay intact","Uploaded documents remain private files and are not automatically interpreted."],
+      ["You choose when AI reviews a file","Uploaded documents remain private and intact. AI review runs only when you request it, and nothing enters your record until you confirm it."],
       ["Clear medical boundary","LifeLens organizes information without medical conclusions."],
     ].map(([title,body])=><div key={title} className="grid gap-3 p-6 md:grid-cols-[180px_1fr] md:p-10"><p className="flex items-start gap-2 text-sm font-medium"><Check size={15} className="mt-0.5"/>{title}</p><p className="text-sm leading-6 text-[#182019]/50">{body}</p></div>)}</div>
   </section>

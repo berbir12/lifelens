@@ -1,11 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { FileSearch, FileText, Search, ShieldCheck, Upload } from "lucide-react";
+import { ExternalLink, FileSearch, FileText, FolderInput, Pencil, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
+import {useSearchParams} from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import {DocumentExtractionReview as ExtractionReview} from "@/components/document-extraction-review";
 
-type Doc = { id: string; name: string; mimeType: string; status: string; createdAt: string };
+type Doc = { id: string; name: string; mimeType: string; status: string; createdAt: string; folderId:string|null };
+type Folder={id:string;name:string;color:string};
 type Job = { id: string; file: File; status: string; error?: string };
 type Medication = {
   name: string;
@@ -31,17 +33,25 @@ function mime(file: File) {
 }
 
 export function DocumentLibrary() {
+  const searchParams=useSearchParams(),folderId=searchParams.get("folder"),unfiled=searchParams.get("unfiled")==="true";
   const picker = useRef<HTMLInputElement>(null);
   const [docs, setDocs] = useState<Doc[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [reviews, setReviews] = useState<Record<string, Review>>({});
   const [query, setQuery] = useState("");
+  const [folders,setFolders]=useState<Folder[]>([]),[message,setMessage]=useState(""),[actionId,setActionId]=useState<string|null>(null);
 
   async function load() {
-    const response = await fetch("/api/documents");
-    if (response.ok) setDocs((await response.json()).records);
+    const params=new URLSearchParams();if(folderId)params.set("folder",folderId);if(unfiled)params.set("unfiled","true");
+    const response = await fetch(`/api/documents?${params}`);
+    if (response.ok){const body=await response.json();setDocs(body.records);setFolders(body.folders??[])}
   }
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [folderId,unfiled]);
+
+  async function openDocument(id:string){setActionId(id);setMessage("");try{const response=await fetch(`/api/documents?id=${encodeURIComponent(id)}`),body=await response.json();if(!response.ok)throw new Error(body.error??"Could not open document.");window.open(body.url,"_blank","noopener,noreferrer")}catch(cause){setMessage(cause instanceof Error?cause.message:"Could not open document.")}finally{setActionId(null)}}
+  async function updateDocument(id:string,update:{name?:string;folderId?:string|null}){setActionId(id);setMessage("");try{const response=await fetch("/api/documents",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id,...update})}),body=await response.json().catch(()=>null);if(!response.ok)throw new Error(body?.error??"Could not update document.");setMessage("Document updated.");await load()}catch(cause){setMessage(cause instanceof Error?cause.message:"Could not update document.")}finally{setActionId(null)}}
+  async function rename(doc:Doc){const name=window.prompt("Document name",doc.name)?.trim();if(name&&name!==doc.name)await updateDocument(doc.id,{name})}
+  async function remove(doc:Doc){if(!window.confirm(`Permanently delete “${doc.name}”? This removes the stored file and cannot be undone.`))return;setActionId(doc.id);setMessage("");try{const response=await fetch("/api/documents",{method:"DELETE",headers:{"content-type":"application/json"},body:JSON.stringify({id:doc.id})}),body=await response.json().catch(()=>null);if(!response.ok)throw new Error(body?.error??"Could not delete document.");setMessage("Document deleted.");await load()}catch(cause){setMessage(cause instanceof Error?cause.message:"Could not delete document.")}finally{setActionId(null)}}
 
   function updateJob(id: string, status: string, error?: string) {
     setJobs(all => all.map(job => job.id === id ? { ...job, status, error } : job));
@@ -97,8 +107,10 @@ export function DocumentLibrary() {
     </section>
     {jobs.length ? <section className="border-t border-black/20 bg-[#eee4d8]"><p className="border-b border-black/15 px-5 py-3 text-xs font-semibold uppercase tracking-[.12em]">Uploads</p>{jobs.map(job => <div key={job.id} className="grid gap-2 border-b border-black/10 px-5 py-3 text-sm sm:grid-cols-[1fr_auto]"><span className="flex items-center gap-3 truncate"><FileText size={15}/>{job.file.name}</span><span className={job.error ? "text-xs text-red-700" : "text-xs text-black/45"}>{job.error ?? job.status}</span></div>)}</section> : null}
     <section className="border-t border-black/20 bg-[#faf9f5]">
-      <div className="flex justify-between gap-4 border-b border-black/20 p-5"><div><h2 className="font-semibold">Documents</h2><p className="mt-1 text-xs text-black/40">{docs.length} stored files</p></div><label className="flex h-10 items-center gap-2 border border-black/20 px-3"><Search size={14}/><span className="sr-only">Filter documents</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Filter" className="w-32 bg-transparent text-sm outline-none"/></label></div>
+      <div className="flex flex-col justify-between gap-4 border-b border-black/20 p-5 sm:flex-row sm:items-center"><div><h2 className="font-semibold">{folderId?folders.find(folder=>folder.id===folderId)?.name??"Folder":unfiled?"Unfiled documents":"All documents"}</h2><p className="mt-1 text-sm text-black/60">{docs.length} stored file{docs.length===1?"":"s"}</p></div><label className="flex min-h-12 items-center gap-2 border border-black/20 px-3"><Search size={17}/><span className="sr-only">Filter documents</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Filter documents" className="w-full bg-transparent text-base outline-none sm:w-44"/></label></div>
+      {message?<p role="status" className="border-b border-black/10 bg-[#e5e8df] px-5 py-3 text-sm">{message}</p>:null}
       {visible.map(doc => <article key={doc.id} className="border-b border-black/10">
+        <div className="flex flex-wrap gap-2 border-b border-black/10 px-5 py-3"><button type="button" disabled={actionId===doc.id} onClick={()=>void openDocument(doc.id)} className="flex min-h-11 items-center gap-2 border border-black/25 px-3 text-sm font-semibold"><ExternalLink size={15}/>Open</button><button type="button" disabled={actionId===doc.id} onClick={()=>void rename(doc)} className="flex min-h-11 items-center gap-2 border border-black/25 px-3 text-sm"><Pencil size={15}/>Rename</button><label className="flex min-h-11 items-center gap-2 border border-black/25 px-3 text-sm"><FolderInput size={15}/><span className="sr-only">Move {doc.name} to folder</span><select value={doc.folderId??""} onChange={event=>void updateDocument(doc.id,{folderId:event.target.value||null})} className="bg-transparent"><option value="">Unfiled</option>{folders.map(folder=><option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label><button type="button" disabled={actionId===doc.id} onClick={()=>void remove(doc)} className="flex min-h-11 items-center gap-2 border border-red-900/30 px-3 text-sm text-red-900"><Trash2 size={15}/>Delete</button></div>
         <div className="grid gap-4 p-5 text-sm sm:grid-cols-[1fr_auto] sm:items-center"><span><b>{doc.name}</b><small className="mt-1 block text-black/40">{new Date(doc.createdAt).toLocaleDateString()} · {doc.status}</small></span>{AI_SUPPORTED.has(doc.mimeType) && doc.status === "STORED" ? <button disabled={reviews[doc.id]?.busy} onClick={() => void analyze(doc.id)} className="flex items-center justify-center gap-2 border border-black/25 px-3 py-2 text-xs font-semibold disabled:opacity-50"><FileSearch size={14}/>{reviews[doc.id]?.busy ? "Reviewing…" : reviews[doc.id]?.extraction ? "Review again" : "Review with AI"}</button> : null}</div>
         {reviews[doc.id]?.error ? <p role="alert" className="border-t border-red-200 bg-red-50 px-5 py-3 text-sm text-red-800">{reviews[doc.id].error}</p> : null}
         {reviews[doc.id]?.extraction && reviews[doc.id]?.extractionId ? <ExtractionReview extractionId={reviews[doc.id].extractionId!} extraction={reviews[doc.id].extraction!}/> : null}
